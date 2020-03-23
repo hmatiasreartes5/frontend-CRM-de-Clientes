@@ -5,6 +5,8 @@ import Navegacion from './components/layout/navegacion'
 import Clientes from './components/clientes/cliente';
 import Productos from './components/productos/producto';
 import Pedidos from './components/pedidos/pedido';
+import NuevoCliente from './components/clientes/NuevoCliente';
+import EditarCliente from './components/clientes/EditarCliente';
 
 function App() {
   return (
@@ -13,9 +15,12 @@ function App() {
         <Header />
         <div className="grid contenedor contenido-principal">
             <Navegacion />
-            <main class="caja-contenido col-9">
+            <main className="caja-contenido col-9">
                 <Switch>
                     <Route exact path="/" component={Clientes} />
+                    <Route exact path="/clientes/nuevo" component={NuevoCliente} />
+                    <Route exact path="/clientes/editar/:id" component={EditarCliente} />
+
                     <Route exact path="/productos" component={Productos} /> 
                     <Route exact path="/pedidos" component={Pedidos} /> 
                 </Switch>
