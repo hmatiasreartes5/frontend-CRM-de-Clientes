@@ -14,6 +14,7 @@ const NuevoPedido = (props) => {
     const [cliente,guardarCliente] = useState({});
     const [busqueda,guardarBusqueda] = useState('');
     const [productos,guardarProductos] = useState([]);
+    const [total,guardarTotal] = useState(0)
 
     //funcion que consulta en la API la informacion del cliente
     const consultarAPI = async () => {
@@ -22,8 +23,9 @@ const NuevoPedido = (props) => {
     }
 
     useEffect(()=> {
-        consultarAPI()
-    },[])
+        consultarAPI();
+        actualizarTotal();
+    },[productos])
 
     const BuscarProducto = async e => {
         e.preventDefault()
@@ -58,6 +60,76 @@ const NuevoPedido = (props) => {
         guardarBusqueda(e.target.value)
     }
 
+    //funciones para actualizar la cantidad del pedido
+    const restarProducto = i => {
+        const todosProductos = [...productos]
+
+        if(todosProductos[i].cantidad === 0) return;
+
+        todosProductos[i].cantidad--;
+
+        guardarProductos(todosProductos)
+    }
+
+    const sumarProducto= i => {
+        const todosProductos = [...productos];
+
+        todosProductos[i].cantidad++;
+
+        guardarProductos(todosProductos);
+    }
+
+    //funcion para actualizar el total a pagar 
+    const actualizarTotal = () => {
+        //verifico si hay elementos en el array de productos
+        if(productos.length === 0){
+            guardarTotal(0);
+            return;
+        } 
+
+        let nuevoTotal = 0;
+        //recorro todos los productos, analizo sus cantidades y precios
+        productos.map(producto => nuevoTotal += (producto.cantidad * producto.precio));
+
+        guardarTotal(nuevoTotal);
+    }
+
+    //funcion para eliminar un producto del pedido 
+    const eliminarProductoPedido = id => {
+        const todosProductos = productos.filter(producto => producto._id !== id);
+
+        guardarProductos(todosProductos);
+    }
+
+    //funcion para almacenar un pedido en DB
+    const realizarPedido = async e => {
+        e.preventDefault()
+
+        //armar el objeto que se va a enviar a la API
+        const pedido = {
+            cliente: id,
+            pedido : productos,
+            total: total
+        }
+
+        //almacenar en la DB
+        const resultado = await clienteAxios.post(`/pedidos/nuevo/${id}`,pedido);
+
+        if(resultado.status === 200){
+            Swal.fire({
+                type: 'succes',
+                title:'Correcto',
+                text: resultado.data.msg
+            })
+        }else{
+            Swal.fire({
+                type: 'error',
+                title:'Se Produjo un error',
+                text: 'Vuelve a intetarlo'
+            })
+        }
+    }
+
     return ( 
         <Fragment>
             <h2>Nuevo Pedido</h2>
@@ -78,16 +150,27 @@ const NuevoPedido = (props) => {
                             <FormCantidadProducto 
                                 key={producto.producto}
                                 producto={producto}
+                                restarProducto={restarProducto}
+                                sumarProducto={sumarProducto}
+                                index={index}
+                                eliminarProductoPedido={eliminarProductoPedido}
                             />
                         ))}
                     </ul>
-                    <div className="campo">
-                        <label>Total:</label>
-                        <input type="number" name="precio" placeholder="Precio" readonly="readonly" />
-                    </div>
-                    <div className="enviar">
-                        <input type="submit" className="btn btn-azul" value="Agregar Pedido"/>
-                    </div>
+                    
+                    <p className="total">Total a Pagar: <spa>$ {total}</spa></p>
+                    {total > 0 ?
+                        (   <form
+                                onSubmit={realizarPedido}
+                            >
+                                <input 
+                                    type="submit"
+                                    className="btn btn-verde btn-block"
+                                    value="Realizar Pedido"
+                                />
+                            </form>
+                        ) : null
+                    }
                 
         </Fragment>
      );
